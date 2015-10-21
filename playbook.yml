@@ -1,0 +1,28 @@
+---
+- hosts: all
+  become: yes
+  become_user: root
+  tasks:
+    - name: Base | update everything
+      yum: name=* state=latest update_cache=yes
+
+    - name: Base | get some basic utils
+      yum: name={{ item }} state=present
+      with_items:
+      - curl
+      - vim
+
+    - name: Docker | install
+      shell: >
+        curl -sSL https://get.docker.com/ | sh
+        creates=/usr/bin/docker
+      notify: start docker
+
+      # TODO: remove for production
+      # TODO: change this to a proper USER module call where we just set up our user(s)
+    - name: Docker | add vagrant to docker group
+      shell: usermod -aG docker vagrant
+
+  handlers:
+    - name: start docker
+      service: name=docker state=started enabled=yes
